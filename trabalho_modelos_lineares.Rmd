@@ -1,0 +1,222 @@
+---
+title: "Trabalho Final - Modelos Lineares"
+subtitle: <center> 2024/2 </center>
+author:  Lorenzo Lima e Mariana Coin
+output: html_document
+date: "2025-01-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Introdução
+
+A regressão múltipla é uma ferramenta estatística amplamente utilizada para modelar e compreender as relações entre uma variável dependente e múltiplas variáveis independentes. Neste trabalho, aplicaremos essa técnica para investigar os fatores que influenciam as taxas de lesões e o desempenho atlético em um ambiente de esportes universitários. Compreender essas relações pode oferecer insights importantes para a otimização de cronogramas de treinamento, prevenção de lesões e melhoria do desempenho geral dos atletas.
+
+O conjunto de dados utilizado neste estudo foi projetado para simular cenários realistas em equipes esportivas universitárias, incluindo informações demográficas dos atletas, regimes de treinamento, calendários de competição, níveis de fadiga e riscos de lesão. A seguir, detalharemos as variáveis presentes no banco de dados, destacando seus papéis no modelo de regressão múltipla.
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(GGally)
+library(gridExtra)
+library(knitr)
+library(HistData)
+library(plotly)
+library(ggplot2)
+library(tidyr)
+library(ggfortify)
+library(MASS)
+library(stats)
+```
+# Descrição do Banco de Dados
+
+O banco de dados foi elaborado com dados sintéticos, mas realistas, com o objetivo de analisar a influência de algoritmos complexos de agendamento sobre as taxas de lesões e o desempenho esportivo. Ele é composto por diferentes categorias de informações:
+
+1. Informações do Atleta:
+
+- Athlete_ID: Identificador único de cada atleta (e.g., A001, A002).
+
+- Age: Idade do atleta (18–25 anos).
+
+- Gender: Gênero do atleta (Masculino/Feminino).
+
+- Height_cm: Altura do atleta em centímetros (160–200 cm).
+
+- Weight_kg: Peso do atleta em quilogramas (55–100 kg).
+
+- Position: Posição de jogo na equipe (Guard, Forward, Center).
+
+2. Informações de Treinamento:
+
+- Training_Intensity: Intensidade média dos treinos em uma escala de 1 (baixa) a 10 (alta).
+
+- Training_Hours_Per_Week: Total de horas de treinamento por semana (5–20 horas).
+
+- Recovery_Days_Per_Week: Número de dias dedicados à recuperação por semana (1–3 dias).
+
+3. Informações do Calendário:
+
+- Match_Count_Per_Week: Número de partidas agendadas por semana (1–4 partidas).
+
+- Rest_Between_Events_Days: Média de dias de descanso entre as partidas (1–3 dias).
+
+4. Variáveis Derivadas:
+
+- Load_Balance_Score: Pontuação calculada (0–100) que indica o equilíbrio entre carga de treinamento e recuperação. Pontuações mais altas refletem um melhor equilíbrio.
+
+- ACL_Risk_Score: Pontuação predita de risco (0–100) para lesões de ACL, LCA em português, referente à lesão do ligamento cruzado anterior. Pontuações mais altas indicam maior risco de lesão.
+
+5. Informações de Lesão:
+
+- Injury_Indicator: Coluna alvo indicando se o atleta sofreu lesão de ACL (1 = Sim, 0 = Não).
+
+6. Métricas de Desempenho:
+
+- Fatigue_Score: Nível subjetivo de fadiga em uma escala de 1 (baixo) a 10 (alto).
+
+- Performance_Score: Pontuação composta de desempenho (50–100), baseada em métricas como pontos marcados e assistências.
+
+- Team_Contribution_Score: Contribuição geral do atleta para o sucesso da equipe em uma escala de 50–100.
+
+```{r}
+data = read_csv("collegiate_athlete_injury_dataset.csv")
+dados <- na.omit(data)
+dados
+```
+
+# Modelo Aplicado e Análise do Gráfico
+
+Para explorar a influência dos fatores "Training_Intensity" e "Training_Hours_Per_Week" sobre o risco de lesão ACL (variável dependente "ACL_Risk_Score"), que foi ajustado no modelo de regressão múltipla abaixo.
+O gráfico gerado exibe a relação entre a intensidade do treinamento (Training_Intensity) e o risco de lesão (ACL_Risk_Score), colorido de acordo com as horas de treinamento por semana (Training_Hours_Per_Week). A linha de regressão adicionada ao gráfico ajuda a visualizar a tendência geral dos dados.
+
+```{r}
+
+modelo = lm(ACL_Risk_Score ~  Training_Intensity + Training_Hours_Per_Week, data = dados)
+
+ggplot(dados, aes(x = Training_Intensity, y = ACL_Risk_Score, color = Training_Hours_Per_Week)) +
+  geom_point() +  # Pontos reais
+  geom_smooth(method = lm, se = FALSE)+
+  theme_minimal()
+
+```
+O gráfico mostra uma tendência positiva, indicando que o risco de lesão ACL aumenta com o aumento da intensidade do treinamento. Além disso, observa-se que a coloração dos pontos sugere que atletas com maior carga horária semanal de treinamento tendem a apresentar maiores riscos de lesão. Essa interação reforça a importância de equilibrar a intensidade e a duração dos treinamentos para minimizar riscos.
+
+# Resultados do Modelo
+
+Os resultados do modelo ajustado são apresentados a seguir:
+
+```{r}
+options(scipen = 999)
+
+str(dados, digits = 3)
+
+modelo = lm(ACL_Risk_Score ~  Training_Intensity + Training_Hours_Per_Week, data = dados)
+
+summary(modelo)
+confint(modelo)
+
+```
+1. Intercepto: O valor do intercepto (21.85) indica o valor médio esperado do "ACL_Risk_Score" quando as variáveis "Training_Intensity" e "Training_Hours_Per_Week" são iguais a zero.
+
+2. Training_Intensity: O coeficiente positivo (2.78) indica que um aumento de uma unidade na intensidade do treinamento resulta em um aumento médio de 2.78 no "ACL_Risk_Score".
+
+3. Training_Hours_Per_Week: O coeficiente positivo (0.92) mostra que cada hora adicional de treinamento por semana aumenta, em média, 0.92 no risco de lesão ACL.
+
+4. Significância Estatística: Ambos os coeficientes são altamente significativos (p < 0.001), indicando que há fortes evidências de que essas variáveis explicam variações no "ACL_Risk_Score".
+
+5. R² Ajustado: Com um valor de 0.1694, o modelo explica aproximadamente 16.94% da variação total no risco de lesão ACL. Embora modesto, é importante considerar que fatores adicionais não modelados podem contribuir para a variação restante.
+
+# Avaliação de Multicolinearidade
+
+Para verificar a presença de multicolinearidade entre as variáveis independentes, foi calculado o VIF (Variance Inflation Factor), cujos resultados são apresentados a seguir:
+
+```{r}
+
+library(car)
+kable(vif(modelo))
+
+```
+Os valores do VIF para ambas as variáveis estão próximos de 1, indicando que não há multicolinearidade entre elas. Isso significa que os efeitos individuais de cada variável sobre o "ACL_Risk_Score" podem ser interpretados de forma confiável no modelo.
+A ausência de multicolinearidade valida a escolha das variáveis independentes no modelo e reforça a confiabilidade das inferências realizadas a partir dos coeficientes estimados.
+
+# Testes de Normalidade
+
+Os seguintes testes de normalidade foram realizados para avaliar os resíduos de forma quantitativa:
+
+- Shapiro-Wilk
+- Kolmogorov-Smirnov
+- Anderson-Darling
+- Cramer-Von-Mises
+
+```{r}
+
+residuos = residuals
+
+library(kableExtra)
+library(nortest)
+
+ggplot(mapping = aes(x = modelo$residuals)) + geom_histogram() +
+  xlab("Residuals") + ylab(" ")
+
+autoplot(modelo, which = 2, label.size = 3)
+
+norm.test.stat = c(shapiro.test(modelo$residuals)$statistic, 
+                   ks.test(modelo$residuals, "pnorm")$statistic, 
+                   ad.test(modelo$residuals)$statistic, 
+                   cvm.test(modelo$residuals)$statistic)
+
+norm.test.pvalue = c(shapiro.test(modelo$residuals)$p.value, 
+                   ks.test(modelo$residuals, "pnorm")$p.value, 
+                   ad.test(modelo$residuals)$p.value, 
+                   cvm.test(modelo$residuals)$p.value)
+
+norm.test = cbind(norm.test.stat, norm.test.pvalue)
+
+rownames(norm.test) = c("Shapiro-Wilk", "Kolmogorov-Smirnov", 
+                        "Anderson-Darling", "Cramer-Von-Mises")
+colnames(norm.test) = c("Statistic", "P.value")
+
+kable(norm.test, align = "c", caption = "Testes de normalidade")
+
+```
+1. Shapiro-Wilk: O p-valor de 0.22 não indica evidências suficientes para rejeitar a hipótese de normalidade.
+2. Kolmogorov-Smirnov: O p-valor é 0.00, sugerindo uma possível violação da normalidade, mas esse teste é sensível a grandes amostras.
+3. Anderson-Darling e Cramer-Von-Mises: Ambos apresentam p-valores altos (0.44 e 0.53), indicando que os resíduos podem ser considerados normais.
+
+Embora o teste de Kolmogorov-Smirnov tenha indicado uma possível violação da normalidade, o Shapiro-Wilk, Anderson-Darling e Cramer-Von-Mises sugerem que a hipótese de normalidade dos resíduos não pode ser rejeitada. A avaliação visual (histograma e Q-Q plot) corrobora essa conclusão. Assim, podemos considerar que a premissa de normalidade dos resíduos foi atendida.
+
+# Análise de Homocedasticidade
+A homocedasticidade é uma premissa importante na regressão múltipla, indicando que a variância dos resíduos é constante ao longo de todos os valores preditos. Para avaliar essa premissa, foi realizado o Teste de Breusch-Pagan e analisado o gráfico de resíduos versus valores ajustados.
+
+O teste de Breusch-Pagan foi realizado utilizando o código abaixo:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 8, fig.height = 3}
+autoplot(modelo, which = 1, label.size = 3)
+
+install.packages("lmtest")
+library(lmtest)
+homo.test = cbind(bptest(modelo, studentize = FALSE)$statistic, 
+                  bptest(modelo, studentize = FALSE)$p.value)
+
+rownames(homo.test) = c("Breusch-Pagan")
+colnames(homo.test) = c("Statistic", "P.value")
+
+kable(homo.test, align = "c", caption = "Teste de homocedasticidade")
+
+```
+O p-valor obtido no teste de Breusch-Pagan foi de 0.4061, indicando que não há evidências suficientes para rejeitar a hipótese nula de homocedasticidade. Portanto, os resíduos podem ser considerados homocedásticos.
+O gráfico de resíduos versus valores ajustados foi gerado apresentando os resíduos distribuídos de maneira relativamente aleatória em torno de uma linha de tendência próxima de zero. No entanto, foi possível observar uma leve curvatura no centro, mas não é o suficiente para indicar uma forte violação da homocedasticidade.
+Logo, com base no Teste de Breusch-Pagan e na análise visual do gráfico de resíduos, não foram observadas evidências significativas de heterocedasticidade no modelo. Portanto, a premissa de homocedasticidade foi atendida.
+
+# Conclusão 
+
+Este estudo aplicou a técnica de regressão múltipla para investigar os fatores associados ao risco de lesões ACL em atletas universitários. As principais conclusões foram:
+
+1. Influência de Fatores: a intensidade do treinamento e as horas semanais de treinamento foram identificadas como variáveis significativamente associadas ao risco de lesão ACL.
+
+2. Modelo Estatístico: embora o modelo explique aproximadamente 17% da variação total no risco de lesão, ele é estatisticamente significativo e oferece insights importantes.
+
+3. Validação do Modelo: testes de normalidade e homocedasticidade indicaram que o modelo atende, em geral, às premissas da regressão múltipla, embora tenha indícios de pequenas violações na normalidade dos resíduos indicada por Kolmogorov-Smirnov.
+
+Esses resultados ressaltam a importância de balancear intensidade e duração do treinamento para minimizar riscos e melhorar o desempenho dos atletas. Pesquisas futuras podem explorar outras variáveis para refinar o modelo e capturar mais nuances sobre a saúde e desempenho atlético.
